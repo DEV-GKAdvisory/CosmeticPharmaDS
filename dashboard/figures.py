@@ -97,19 +97,21 @@ def holdout_forecast_chart(holdouts: pd.DataFrame, frequency: str) -> go.Figure:
             y=actual["actual"],
             mode="lines+markers",
             name="Actual",
-            line=dict(color="#111111", width=2.5),
-            marker=dict(size=5),
+            line=dict(color="#111111", width=3),
+            marker=dict(size=6),
         )
     )
-    for model, group in subset.groupby("model"):
-        group = group.sort_values("target_date")
+    # Stable order so every model appears in the legend and plot.
+    for model in sorted(subset["model"].dropna().unique()):
+        group = subset[subset["model"] == model].sort_values("target_date")
         fig.add_trace(
             go.Scatter(
                 x=group["target_date"],
                 y=group["prediction"],
-                mode="lines",
-                name=model,
-                line=dict(color=colors[model], width=2),
+                mode="lines+markers",
+                name=str(model),
+                line=dict(color=colors[model], width=2.5),
+                marker=dict(size=5),
             )
         )
 
@@ -127,9 +129,12 @@ def holdout_forecast_chart(holdouts: pd.DataFrame, frequency: str) -> go.Figure:
 
 def error_by_step_chart(holdouts: pd.DataFrame, frequency: str) -> go.Figure:
     subset = holdouts[holdouts["frequency"] == frequency].copy()
-    if subset.empty or "step_ahead" not in subset.columns:
+    if subset.empty:
+        return go.Figure().update_layout(title="No step-ahead data")
+    if "step_ahead" not in subset.columns or subset["step_ahead"].isna().all():
         return go.Figure().update_layout(title="No step-ahead data")
 
+    subset = subset.dropna(subset=["step_ahead", "actual", "prediction"])
     subset["abs_error"] = (subset["actual"] - subset["prediction"]).abs()
     by_step = (
         subset.groupby(["model", "step_ahead"], as_index=False)["abs_error"]

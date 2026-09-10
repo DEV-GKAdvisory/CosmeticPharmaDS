@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -32,9 +33,28 @@ def data_dir(root: Path | None = None) -> Path:
 
 def _sanitize_frame(frame: pd.DataFrame) -> pd.DataFrame:
     out = frame.copy()
-    for col in out.select_dtypes(include="object").columns:
+    for col in out.select_dtypes(include=["object", "string"]).columns:
         out[col] = out[col].map(sanitize_text)
     return out
+
+
+def _fill_step_ahead(frame: pd.DataFrame) -> pd.DataFrame:
+    """Prophet holdouts often omit step_ahead; derive it from date order."""
+    out = frame.copy()
+    if "step_ahead" not in out.columns:
+        out["step_ahead"] = pd.NA
+    out = out.sort_values(["frequency", "model", "target_date"]).reset_index(drop=True)
+    missing = out["step_ahead"].isna()
+    if missing.any():
+        derived = out.groupby(["frequency", "model"], sort=False).cumcount() + 1
+        out.loc[missing, "step_ahead"] = derived.loc[missing]
+    out["step_ahead"] = out["step_ahead"].astype(float)
+    return out
+
+
+def _records_clean(frame: pd.DataFrame) -> list[dict]:
+    """Convert frame to JSON-safe records (NaN / NaT → None)."""
+    return json.loads(frame.to_json(orient="records", date_format="iso"))
 
 
 def load_metrics(root: Path | None = None) -> pd.DataFrame:
@@ -50,7 +70,8 @@ def load_holdouts(root: Path | None = None) -> pd.DataFrame:
     if not path.exists():
         raise FileNotFoundError(f"Missing {path}. Run scripts/import_results.py first.")
     frame = pd.read_csv(path, parse_dates=["target_date", "forecast_origin"])
-    return frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)].copy()
+    frame = frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)].copy()
+    return _fill_step_ahead(frame)
 
 
 def load_specifications(root: Path | None = None) -> pd.DataFrame:
@@ -76,8 +97,8 @@ def export_payload(root: Path | None = None) -> dict:
     return {
         "frequencies": list(DASHBOARD_FREQUENCIES),
         "frequency_labels": FREQUENCY_LABELS,
-        "metrics": metrics.to_dict(orient="records"),
-        "holdouts": holdouts.to_dict(orient="records"),
-        "specifications": specs.to_dict(orient="records"),
+        "metrics": _records_clean(metrics),
+        "holdouts": _records_clean(holdouts),
+        "specifications": _records_clean(specs),
         "model_colors": MODEL_COLORS,
     }

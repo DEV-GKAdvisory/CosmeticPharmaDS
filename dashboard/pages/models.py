@@ -13,32 +13,71 @@ dash.register_page(__name__, path="/models", title="Model descriptions")
 
 _specs = load_specifications()
 
+_LONG_FIELDS = (
+    ("description", "Description"),
+    ("predictors", "Predictors"),
+    ("estimator", "Estimator"),
+    ("monthly_ids", "Monthly predictors"),
+    ("weekly_ids", "Weekly predictors"),
+    ("daily_ids", "Daily predictors"),
+    ("regressors", "Regressors"),
+)
+
+
+def _text(value: object) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if text.lower() in {"", "nan", "none", "null"}:
+        return ""
+    return text
+
+
+def _scroll_box(label: str, value: str, rows: int = 4) -> html.Div:
+    return html.Div(
+        [
+            html.Label(label, className="fw-semibold small mb-1"),
+            dcc.Textarea(
+                value=value,
+                readOnly=True,
+                style={
+                    "width": "100%",
+                    "minHeight": f"{max(rows, 3) * 1.4}em",
+                    "fontFamily": "ui-monospace, SFMono-Regular, Menlo, monospace",
+                    "fontSize": "0.85rem",
+                    "resize": "vertical",
+                    "background": "#f8f9fa",
+                    "border": "1px solid #dee2e6",
+                    "borderRadius": "6px",
+                    "padding": "0.6rem 0.75rem",
+                },
+            ),
+        ],
+        className="mb-3",
+    )
+
 
 def _spec_card(row: pd.Series) -> dbc.Card:
-    body = [
-        html.P(row["description"], className="mb-2"),
+    body: list = [
         html.Dl(
             [
                 html.Dt("Type"),
-                html.Dd(row["model_type"]),
-                html.Dt("Predictors"),
-                html.Dd(row["predictors"] or "—"),
-                html.Dt("Estimator"),
-                html.Dd(row["estimator"] or "—"),
+                html.Dd(_text(row.get("model_type")) or "—"),
                 html.Dt("Horizon"),
-                html.Dd(row["horizon"]),
+                html.Dd(_text(row.get("horizon")) or "—"),
             ],
-            className="mb-0 small",
-        ),
-    ]
-    if pd.notna(row.get("regressors")) and str(row["regressors"]).strip():
-        body.extend(
-            [
-                html.Hr(className="my-2"),
-                html.P("Regressors", className="fw-semibold mb-1 small"),
-                html.P(str(row["regressors"]), className="small text-muted mb-0"),
-            ]
+            className="mb-3 small",
         )
+    ]
+    for key, label in _LONG_FIELDS:
+        value = _text(row.get(key))
+        if not value:
+            continue
+        rows = 6 if key == "description" else 3
+        body.append(_scroll_box(label, value, rows=rows))
+
     return dbc.Card(
         [dbc.CardHeader(html.Strong(row["model"])), dbc.CardBody(body)],
         className="mb-3 shadow-sm",
@@ -49,7 +88,8 @@ layout = dbc.Container(
     [
         html.H2("Model descriptions", className="mb-3"),
         html.P(
-            "Estimator details, predictors, and regressors for each saved model.",
+            "Full specifications for each saved model. Long fields are shown in "
+            "scrollable text boxes.",
             className="text-muted",
         ),
         dbc.Row(

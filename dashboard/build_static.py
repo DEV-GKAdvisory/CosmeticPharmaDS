@@ -44,6 +44,25 @@ dd { margin: 0; color: #495057; }
 .hero h1 { margin-top: 0; }
 .grid { display: grid; gap: 1rem; }
 @media (min-width: 720px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+.field-label { font-weight: 600; font-size: .85rem; display: block; margin: .75rem 0 .35rem; }
+.scrollbox {
+  width: 100%;
+  min-height: 4.5em;
+  max-height: 12em;
+  overflow: auto;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .85rem;
+  line-height: 1.4;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: .6rem .75rem;
+  color: #212529;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+}
+.scrollbox.tall { min-height: 7em; max-height: 16em; }
 """
 
 
@@ -162,26 +181,44 @@ def _write_models(specs: list[dict]) -> None:
     )
     body = f"""
 <h2>Model descriptions</h2>
-<p class="muted">Estimator, predictors, and regressors for each model.</p>
+<p class="muted">Full specifications for each saved model. Long fields use scrollable text boxes.</p>
 <label for="frequency">Frequency</label>
 <select id="frequency">{options}</select>
 <div id="cards" style="margin-top: 1rem;"></div>
 <script>
-const SPECS = {json.dumps(specs)};
+const SPECS = {json.dumps(specs, allow_nan=False)};
+const LONG_FIELDS = [
+  ["description", "Description", true],
+  ["predictors", "Predictors", false],
+  ["estimator", "Estimator", false],
+  ["monthly_ids", "Monthly predictors", false],
+  ["weekly_ids", "Weekly predictors", false],
+  ["daily_ids", "Daily predictors", false],
+  ["regressors", "Regressors", false],
+];
 function esc(s) {{
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }}
+function hasText(v) {{
+  if (v === null || v === undefined) return false;
+  const t = String(v).trim();
+  return t.length > 0 && t.toLowerCase() !== 'nan' && t.toLowerCase() !== 'none' && t.toLowerCase() !== 'null';
+}}
+function field(label, value, tall) {{
+  return `<label class="field-label">${{esc(label)}}</label>` +
+    `<textarea class="scrollbox${{tall ? ' tall' : ''}}" readonly>${{esc(value)}}</textarea>`;
+}}
 function card(row) {{
-  const regressors = row.regressors && String(row.regressors).trim() && row.regressors !== 'null'
-    ? `<hr><p><strong>Regressors</strong></p><p class="muted">${{esc(row.regressors)}}</p>` : '';
-  return `<div class="card"><h3>${{esc(row.model)}}</h3>
-    <p>${{esc(row.description)}}</p>
-    <dl>
-      <dt>Type</dt><dd>${{esc(row.model_type)}}</dd>
-      <dt>Predictors</dt><dd>${{esc(row.predictors || '—')}}</dd>
-      <dt>Estimator</dt><dd>${{esc(row.estimator || '—')}}</dd>
-      <dt>Horizon</dt><dd>${{esc(row.horizon)}}</dd>
-    </dl>${{regressors}}</div>`;
+  const parts = [
+    `<div class="card"><h3>${{esc(row.model)}}</h3>`,
+    `<dl><dt>Type</dt><dd>${{esc(row.model_type || '—')}}</dd>`,
+    `<dt>Horizon</dt><dd>${{esc(row.horizon || '—')}}</dd></dl>`
+  ];
+  for (const [key, label, tall] of LONG_FIELDS) {{
+    if (hasText(row[key])) parts.push(field(label, row[key], tall));
+  }}
+  parts.push('</div>');
+  return parts.join('');
 }}
 function render(freq) {{
   const rows = SPECS.filter(r => r.frequency === freq).sort((a,b) => a.model.localeCompare(b.model));
@@ -207,7 +244,7 @@ def build() -> Path:
     assets = DOCS_DIR / "assets"
     assets.mkdir(exist_ok=True)
     (assets / "data.json").write_text(
-        json.dumps(payload, indent=2), encoding="utf-8"
+        json.dumps(payload, indent=2, allow_nan=False), encoding="utf-8"
     )
 
     figures = _figure_bundle(metrics, holdouts)

@@ -24,6 +24,25 @@ dd { margin: 0; color: #495057; }
 .hero h1 { margin-top: 0; }
 .grid { display: grid; gap: 1rem; }
 @media (min-width: 720px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+.field-label { font-weight: 600; font-size: .85rem; display: block; margin: .75rem 0 .35rem; }
+.scrollbox {
+  width: 100%;
+  min-height: 4.5em;
+  max-height: 12em;
+  overflow: auto;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .85rem;
+  line-height: 1.4;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: .6rem .75rem;
+  color: #212529;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+}
+.scrollbox.tall { min-height: 7em; max-height: 16em; }
 </style>
 </head>
 <body>
