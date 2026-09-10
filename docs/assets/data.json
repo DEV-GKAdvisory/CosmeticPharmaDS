@@ -3414,12 +3414,12 @@
       "horizon": "1 month",
       "model_type": "ensemble",
       "predictors": "ensemble of MIDAS_all + MIDAS_daily",
-      "estimator": "Weighted mean of member holdout forecasts (WAPE-optimal weights)",
+      "estimator": "PSO + Nelder-Mead weighted mean of member holdout forecasts (WAPE-optimal)",
       "monthly_ids": null,
       "weekly_ids": null,
       "daily_ids": null,
       "regressors": "MIDAS_all=1.000, MIDAS_daily=0.000",
-      "description": "Weighted mean of MIDAS members (MIDAS_all, MIDAS_daily) on native daily frequency. Weights minimize holdout WAPE."
+      "description": "Weighted mean of MIDAS members (MIDAS_all, MIDAS_daily) on native daily frequency. Weights from PSO then Nelder-Mead polish to minimize holdout WAPE."
     },
     {
       "model": "Avg_ex_prophet",
@@ -3427,12 +3427,12 @@
       "horizon": "1 month",
       "model_type": "ensemble",
       "predictors": "ensemble of MIDAS_all + MIDAS_daily + ProphetX",
-      "estimator": "Weighted mean of member holdout forecasts (WAPE-optimal weights)",
+      "estimator": "PSO + Nelder-Mead weighted mean of member holdout forecasts (WAPE-optimal)",
       "monthly_ids": null,
       "weekly_ids": null,
       "daily_ids": null,
       "regressors": "MIDAS_all=0.000, MIDAS_daily=0.000, ProphetX=1.000",
-      "description": "Weighted mean of all models except univariate prophet (MIDAS_all, MIDAS_daily, ProphetX) on native daily frequency. Weights minimize holdout WAPE."
+      "description": "Weighted mean of all models except univariate prophet (MIDAS_all, MIDAS_daily, ProphetX) on native daily frequency. Weights from PSO then Nelder-Mead polish to minimize holdout WAPE."
     },
     {
       "model": "MIDAS_all",
@@ -3492,12 +3492,12 @@
       "horizon": "1 year",
       "model_type": "ensemble",
       "predictors": "ensemble of MIDAS_all + MIDAS_monthly",
-      "estimator": "Weighted mean of member holdout forecasts (WAPE-optimal weights)",
+      "estimator": "PSO + Nelder-Mead weighted mean of member holdout forecasts (WAPE-optimal)",
       "monthly_ids": null,
       "weekly_ids": null,
       "daily_ids": null,
       "regressors": "MIDAS_all=1.000, MIDAS_monthly=0.000",
-      "description": "Weighted mean of MIDAS members (MIDAS_all, MIDAS_monthly) on native monthly frequency. Weights minimize holdout WAPE."
+      "description": "Weighted mean of MIDAS members (MIDAS_all, MIDAS_monthly) on native monthly frequency. Weights from PSO then Nelder-Mead polish to minimize holdout WAPE."
     },
     {
       "model": "Avg_ex_prophet",
@@ -3505,12 +3505,12 @@
       "horizon": "1 year",
       "model_type": "ensemble",
       "predictors": "ensemble of MIDAS_all + MIDAS_monthly + ProphetX",
-      "estimator": "Weighted mean of member holdout forecasts (WAPE-optimal weights)",
+      "estimator": "PSO + Nelder-Mead weighted mean of member holdout forecasts (WAPE-optimal)",
       "monthly_ids": null,
       "weekly_ids": null,
       "daily_ids": null,
       "regressors": "MIDAS_all=1.000, MIDAS_monthly=0.000, ProphetX=0.000",
-      "description": "Weighted mean of all models except univariate prophet (MIDAS_all, MIDAS_monthly, ProphetX) on native monthly frequency. Weights minimize holdout WAPE."
+      "description": "Weighted mean of all models except univariate prophet (MIDAS_all, MIDAS_monthly, ProphetX) on native monthly frequency. Weights from PSO then Nelder-Mead polish to minimize holdout WAPE."
     },
     {
       "model": "MIDAS_all",
