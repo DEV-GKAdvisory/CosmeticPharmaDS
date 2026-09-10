@@ -24,6 +24,8 @@ MODEL_COLORS = {
     "MIDAS_all": "#00CC96",
     "MIDAS_daily": "#AB63FA",
     "MIDAS_monthly": "#FFA15A",
+    "Avg_MIDAS": "#19D3F3",
+    "Avg_ex_prophet": "#FF6692",
 }
 
 
