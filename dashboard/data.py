@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -28,6 +29,8 @@ MODEL_COLORS = {
     "Avg_ex_prophet": "#FF6692",
 }
 
+_WEIGHT_RE = re.compile(r"([A-Za-z0-9_]+)\s*=\s*([0-9.]+)")
+
 
 def data_dir(root: Path | None = None) -> Path:
     return root or DATA_DIR
@@ -38,6 +41,51 @@ def _sanitize_frame(frame: pd.DataFrame) -> pd.DataFrame:
     for col in out.select_dtypes(include=["object", "string"]).columns:
         out[col] = out[col].map(sanitize_text)
     return out
+
+
+def _parse_weights(regressors: object) -> dict[str, float]:
+    if regressors is None or (isinstance(regressors, float) and pd.isna(regressors)):
+        return {}
+    text = str(regressors).strip()
+    if not text or text.lower() in {"nan", "none", "null"}:
+        return {}
+    return {name: float(value) for name, value in _WEIGHT_RE.findall(text)}
+
+
+def degenerate_average_keys(specs: pd.DataFrame) -> set[tuple[str, str]]:
+    """(model, frequency) pairs where any ensemble weight is 1 (no real average)."""
+    keys: set[tuple[str, str]] = set()
+    if specs.empty:
+        return keys
+    for row in specs.itertuples(index=False):
+        model = str(row.model)
+        if not model.startswith("Avg_"):
+            continue
+        weights = _parse_weights(getattr(row, "regressors", None))
+        if weights and any(w >= 1.0 - 1e-9 for w in weights.values()):
+            keys.add((model, str(row.frequency)))
+    return keys
+
+
+def _drop_degenerate_averages(
+    frame: pd.DataFrame, *, specs: pd.DataFrame | None = None, root: Path | None = None
+) -> pd.DataFrame:
+    if frame.empty or "model" not in frame.columns:
+        return frame
+    if specs is None:
+        specs_path = data_dir(root) / "model_specifications.csv"
+        if not specs_path.exists():
+            return frame
+        specs = pd.read_csv(specs_path)
+        specs = specs[specs["frequency"].isin(DASHBOARD_FREQUENCIES)]
+    drop = degenerate_average_keys(specs)
+    if not drop:
+        return frame
+    mask = [
+        (str(model), str(freq)) not in drop
+        for model, freq in zip(frame["model"], frame["frequency"])
+    ]
+    return frame.loc[mask].copy()
 
 
 def _fill_step_ahead(frame: pd.DataFrame) -> pd.DataFrame:
@@ -59,12 +107,22 @@ def _records_clean(frame: pd.DataFrame) -> list[dict]:
     return json.loads(frame.to_json(orient="records", date_format="iso"))
 
 
+def load_specifications(root: Path | None = None) -> pd.DataFrame:
+    path = data_dir(root) / "model_specifications.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"Missing {path}. Run scripts/import_results.py first.")
+    frame = pd.read_csv(path)
+    frame = _sanitize_frame(frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)])
+    return _drop_degenerate_averages(frame, specs=frame, root=root)
+
+
 def load_metrics(root: Path | None = None) -> pd.DataFrame:
     path = data_dir(root) / "metrics_by_model.csv"
     if not path.exists():
         raise FileNotFoundError(f"Missing {path}. Run scripts/import_results.py first.")
     frame = pd.read_csv(path)
-    return _sanitize_frame(frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)])
+    frame = _sanitize_frame(frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)])
+    return _drop_degenerate_averages(frame, root=root)
 
 
 def load_holdouts(root: Path | None = None) -> pd.DataFrame:
@@ -73,15 +131,8 @@ def load_holdouts(root: Path | None = None) -> pd.DataFrame:
         raise FileNotFoundError(f"Missing {path}. Run scripts/import_results.py first.")
     frame = pd.read_csv(path, parse_dates=["target_date", "forecast_origin"])
     frame = frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)].copy()
+    frame = _drop_degenerate_averages(frame, root=root)
     return _fill_step_ahead(frame)
-
-
-def load_specifications(root: Path | None = None) -> pd.DataFrame:
-    path = data_dir(root) / "model_specifications.csv"
-    if not path.exists():
-        raise FileNotFoundError(f"Missing {path}. Run scripts/import_results.py first.")
-    frame = pd.read_csv(path)
-    return _sanitize_frame(frame[frame["frequency"].isin(DASHBOARD_FREQUENCIES)])
 
 
 def export_payload(root: Path | None = None) -> dict:
