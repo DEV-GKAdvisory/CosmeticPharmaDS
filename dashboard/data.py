@@ -12,10 +12,11 @@ from .sanitize import sanitize_text
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = REPO_ROOT / "data"
-DASHBOARD_FREQUENCIES = ("daily", "monthly")
+DASHBOARD_FREQUENCIES = ("daily", "weekly", "monthly")
 
 FREQUENCY_LABELS = {
     "daily": "Daily (1-month horizon)",
+    "weekly": "Weekly (3-month horizon)",
     "monthly": "Monthly (1-year horizon)",
 }
 
@@ -24,6 +25,7 @@ MODEL_COLORS = {
     "prophet": "#EF553B",
     "MIDAS_all": "#00CC96",
     "MIDAS_daily": "#AB63FA",
+    "MIDAS_weekly": "#B6E880",
     "MIDAS_monthly": "#FFA15A",
     "Avg_MIDAS": "#19D3F3",
     "Avg_ex_prophet": "#FF6692",

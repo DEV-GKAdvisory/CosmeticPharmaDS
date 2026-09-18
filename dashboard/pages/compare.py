@@ -24,7 +24,7 @@ layout = dbc.Container(
     [
         html.H2("Model comparison", className="mb-3"),
         html.P(
-            "Holdout performance for daily and monthly pharmacy sales forecasts. "
+            "Holdout performance for daily, weekly, and monthly pharmacy sales forecasts. "
             "Select a frequency to compare saved models.",
             className="text-muted",
         ),

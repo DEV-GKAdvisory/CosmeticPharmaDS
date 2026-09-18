@@ -11,7 +11,7 @@ Published on **GitHub Pages**: https://dev-gkadvisory.github.io/CosmeticPharmaDS
 | **Compare models** | WAPE bars, holdout actual vs forecast, step-ahead MAE, metrics table |
 | **Model descriptions** | Estimator, predictors, regressors per model |
 
-Only **daily** and **monthly** frequencies are shown.
+**Daily**, **weekly**, and **monthly** frequencies are shown.
 
 ## Local Dash server
 
@@ -39,7 +39,7 @@ GitHub → **Settings → Pages** → source: **GitHub Actions** (workflow deplo
 ## Repository layout
 
 ```
-data/                 # comparison CSVs (daily + monthly)
+data/                 # comparison CSVs (daily + weekly + monthly)
 dashboard/            # Dash app + static export
 docs/                 # static site served by GitHub Pages
 scripts/import_results.py

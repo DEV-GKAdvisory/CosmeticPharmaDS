@@ -121,7 +121,7 @@ def _write_index() -> None:
     body = """
 <div class="hero">
   <h1>Cosmetic pharma sales forecasting</h1>
-  <p class="muted">Holdout comparison of Prophet, ProphetX, and MIDAS models on daily and monthly frequencies.</p>
+  <p class="muted">Holdout comparison of Prophet, ProphetX, and MIDAS models on daily, weekly, and monthly frequencies.</p>
   <div class="grid grid-2" style="margin-top: 1.5rem;">
     <div class="card">
       <h3>Compare models</h3>
